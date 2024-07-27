@@ -1,0 +1,11 @@
+service: james-fyp
+runtime: python310
+
+handlers:
+- url: /static
+  static_dir: staticfiles
+
+- url: /.*
+  script: auto
+
+entrypoint: gunicorn -b :$PORT WebApp.wsgi
