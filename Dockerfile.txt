@@ -1,0 +1,50 @@
+# Stage 1: Build React frontend
+FROM node:20 as frontend-build
+
+WORKDIR /app/frontend
+COPY ./frontend/package.json ./frontend/yarn.lock ./
+RUN yarn install
+COPY ./frontend/ ./
+RUN yarn build
+
+# Stage 2: Set up Python environment
+FROM python:3.10
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    nodejs \
+    npm
+
+# Install Python dependencies
+COPY ./requirements.txt .
+RUN pip install -r requirements.txt
+
+# Copy the Django project
+COPY ./ /app/WebApp
+
+# Copy built React files
+COPY --from=frontend-build /app/frontend/static /app/frontend/static
+
+# Set the working directory to WebApp
+WORKDIR /app/WebApp
+
+# Create staticfiles directory
+RUN mkdir -p staticfiles
+
+# Set permissions
+RUN chmod -R 755 /app/WebApp
+
+# Collect static files with verbose output and continue on error
+RUN python manage.py collectstatic --noinput -v 3 || true
+
+# List contents of relevant directories for debugging
+RUN echo "Contents of /app/WebApp:" && ls -la /app/WebApp && \
+    echo "Contents of /app/WebApp/staticfiles:" && ls -la /app/WebApp/staticfiles
+
+# Expose the port the app runs on
+EXPOSE 8000
+
+# Command to run the application
+CMD ["sh", "-c", "python manage.py collectstatic --noinput && python manage.py runserver 0.0.0.0:8000"]

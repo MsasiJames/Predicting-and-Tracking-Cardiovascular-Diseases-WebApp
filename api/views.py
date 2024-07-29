@@ -22,7 +22,7 @@ class GradientBoostMachine(APIView):
     serializer_class = PredictSerializer
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.model = joblib.load('D:\Year 3\Investigations\PROJECT\AppEnv\WebApp\models\gbm_model.pkl')     # use absolute path
+        self.model = joblib.load('./models/gbm_model.pkl')     # use absolute path
         
     def post(self, request):
         serializer = self.serializer_class(data = request.data)
