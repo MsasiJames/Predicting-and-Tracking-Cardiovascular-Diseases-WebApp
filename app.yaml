@@ -1,11 +1,10 @@
+runtime: python310  # Use the appropriate Python runtime
+entrypoint: gunicorn -b :8000 myproject.wsgi
+
 service: james-fyp
-runtime: python310
 
-handlers:
-- url: /static
-  static_dir: staticfiles
+env_variables:
+  DJANGO_SETTINGS_MODULE: "WebApp.settings"
+  SECRET_KEY: "django-insecure-%rw4fb5t7b6-1e9mk3k3@2o9%zz_ruv_jq2-hbqu%sn_=jw)ti"
 
-- url: /.*
-  script: auto
-
-entrypoint: gunicorn -b :$PORT WebApp.wsgi
+instance_class: F2

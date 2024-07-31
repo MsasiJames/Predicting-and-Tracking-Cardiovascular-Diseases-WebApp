@@ -12,6 +12,6 @@ COPY . .
 
 RUN python manage.py collectstatic --noinput -v 3 || true
 
-EXPOSE 8000
+EXPOSE 8080
 
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8080"]

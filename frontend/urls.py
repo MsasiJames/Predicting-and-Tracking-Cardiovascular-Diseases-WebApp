@@ -3,5 +3,4 @@ from .views import index
 
 urlpatterns = [
     path("", index),
-    path("dashboard", index)
 ]

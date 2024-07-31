@@ -2,7 +2,7 @@ version: '3.10'
 
 services:
   django:
-    image: fyp:0.0.1
+    image: fyp:0.0.2
     build: .
     ports:
-      - "8000:8000"
+      - "8080:8080"

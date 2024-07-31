@@ -11,6 +11,8 @@ import { Card, CardContent,
 
 import { LineChart } from '@mui/x-charts/LineChart';
 
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+
 import Welcome from './welcome';
 
 
@@ -191,6 +193,7 @@ function Dashboard() {
   });
 
   return (
+
     <ThemeProvider theme={theme}>
       <GlobalStyles
       styles={{
@@ -216,7 +219,7 @@ function Dashboard() {
     <div
       style={{
         display: 'flex',
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
         flexDirection: 'column',
         alignItems: 'center',
         height: '100vh',
@@ -226,6 +229,7 @@ function Dashboard() {
       <Box sx={{
         width: '20%',
         marginBottom: '10px',
+        marginTop: '20px',
         display: 'flex',
         flexDirection: 'row',
       }}>
@@ -492,6 +496,12 @@ function Dashboard() {
                   name="createdAt"
                   value={formData.createdAt}
                   onChange={handleChange}
+                  sx={{
+                    '& input[type="date"]::-webkit-calendar-picker-indicator': {
+                      filter: 'invert(1)',
+                    },
+                  }}
+                  
                 />
               </Grid>
             </Grid>
@@ -516,6 +526,7 @@ function Dashboard() {
                     formData.bmi = (formData.weight / (((formData.height)/100) **2)).toFixed(2).slice(0, 5)
                     console.log(formData);
                     sendPatientData();
+                    fetchPatientData(patientEmail);
                   }
                 }}
             >
@@ -531,10 +542,6 @@ function Dashboard() {
         </CardContent>
           
       </Card>
-
-                {/* deal with this later */}
-      {error.length > 0 && <Alert severity="warning">{error}</Alert>}  
-
 
       {/* Modal for registering new patients */}
       <Modal
@@ -581,10 +588,10 @@ function Dashboard() {
 
       </Box>
     </Modal>
-
       
     </div>
     </ThemeProvider>
+
   )
 }
 
