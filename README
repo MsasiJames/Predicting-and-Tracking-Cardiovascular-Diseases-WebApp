@@ -1,0 +1,11 @@
+Django x ReactJS project
+    Uses Gradient Boost Model to predict occurence of cardiovascular diseases
+    then plots on graph for tracking user progress
+
+To start
+    navigate to: ./ in the terminal then execute "pip install -r requirements.txt"
+    then execute "python manage.py runserver"
+
+    navigate to: ./frontend in the terminal then execute "yarn run dev"
+
+Note: To just run the project you just need to do the first part, the second part is if you wanna make changes to frontend
