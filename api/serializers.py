@@ -47,3 +47,9 @@ class PredictSerializer(serializers.ModelSerializer):
         model = PatientData
         fields = ('user_email', 'age', 'gender', 'weight', 'height', 'ap_hi', 'ap_lo', 'cholesterol', 'glucose', 'alco', 'smoke', 'active'
                   , 'bmi', 'bp_encoded', 'createdAt')
+        
+class GetAllPatientDataSerializer(serializers.ModelSerializer):
+    user_email = serializers.CharField(source = 'user.email')
+    class Meta:
+        model = PatientData
+        fields = ('user_email', 'presence_prediction', 'not_presence_prediction', 'createdAt')

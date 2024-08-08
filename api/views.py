@@ -8,6 +8,7 @@ import joblib
 from django.shortcuts import get_object_or_404
 import numpy as np
 from rest_framework.response import Response
+from django.db.models import Max
 
 # Create your views here.
 class UserEmailsView(generics.ListAPIView):
@@ -23,6 +24,23 @@ class GradientBoostMachine(APIView):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.model = joblib.load('./models/gbm_model.pkl')     # use absolute path
+        
+    def get_feature_names(self):
+        return ['age', 'gender', 'weight', 'height', 'ap_hi', 'ap_lo', 'cholesterol', 
+                'glucose', 'alco', 'smoke', 'active', 'bmi', 'bp_encoded']
+
+    def get_leading_causes(self, input_data):
+        feature_importance = self.model.feature_importances_
+        feature_names = self.get_feature_names()
+        
+        # Pair feature names with their importance scores
+        feature_importance_pairs = list(zip(feature_names, feature_importance))
+        
+        # Sort pairs by importance score in descending order
+        sorted_pairs = sorted(feature_importance_pairs, key=lambda x: x[1], reverse=True)
+        
+        # Return the top 3 feature names
+        return [pair[0] for pair in sorted_pairs[:3]]
         
     def post(self, request):
         serializer = self.serializer_class(data = request.data)
@@ -51,6 +69,8 @@ class GradientBoostMachine(APIView):
             prediction = self.model.predict(input_data)[0]
             probabilities = self.model.predict_proba(input_data)[0]
             
+            leading_causes = self.get_leading_causes(input_data)
+            
              # Create new patient data
             PatientData.objects.create(
                 user=user,
@@ -69,11 +89,15 @@ class GradientBoostMachine(APIView):
                 not_presence_prediction=probabilities.tolist()[0],
                 presence_prediction=probabilities.tolist()[1],
                 createdAt = serializer.validated_data['createdAt'],
+                leading_cause_1=leading_causes[0] if len(leading_causes) > 0 else None,
+                leading_cause_2=leading_causes[1] if len(leading_causes) > 1 else None,
+                leading_cause_3=leading_causes[2] if len(leading_causes) > 2 else None,
             )
 
             return Response({
                 'prediction': int(prediction),
-                'probability': probabilities.tolist()
+                'probability': probabilities.tolist(),
+                'leading_causes': leading_causes
                 }, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)  
@@ -93,4 +117,15 @@ class GetPatientData(APIView):
         else:
             return Response({"Error":"No patient data"}, status=status.HTTP_404_NOT_FOUND)
         
+class GetAllPatientData(generics.ListAPIView):
+    serializer_class = GetAllPatientDataSerializer
+    
+    def get_queryset(self):
+        latest_entries = PatientData.objects.values('user').annotate(latest_createdAt = Max('createdAt'))
         
+        queryset = PatientData.objects.filter(
+            createdAt__in = [entry['latest_createdAt'] for entry in latest_entries]
+        ).order_by('-presence_prediction')
+        
+        return queryset
+    

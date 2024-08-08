@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useMemo} from 'react';
 import { Card, CardContent,
           CardActions, Button,
           ThemeProvider, Typography,
@@ -6,12 +6,15 @@ import { Card, CardContent,
           Box, InputLabel, MenuItem,
           FormControl, Select, 
           TextField, Alert,
-          Modal, Grid
+          Modal, Grid, Table,
+          TableBody, TableCell,
+          TableContainer, TableHead,
+          TableRow, Paper
         } from '@mui/material';
 
 import { LineChart } from '@mui/x-charts/LineChart';
 
-import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import CheckIcon from '@mui/icons-material/Check';
 
 import Welcome from './welcome';
 
@@ -24,9 +27,14 @@ function Dashboard() {
 
   const [patientData, setPatientData] = useState([]);
 
+  const [allPatientData, setAllPatientData] = useState([]);
+
   const [showGraph, setShowGraph] = useState(true);
 
   const [error, setError] = useState('');
+
+  const [registerSuccess, setRegisterSuccess] = useState(false);
+  const [registerError, setRegisterError] = useState(false);
 
   const [open, setOpen] = useState(false);
   const handleOpen = () => setOpen(true);
@@ -131,6 +139,7 @@ function Dashboard() {
       .then((res) => {
         if(res.ok){
           console.log("Patient data request sent successfully");
+          fetchPatientData(patientEmail);
           return res.json();
         }
       })
@@ -152,7 +161,16 @@ function Dashboard() {
     fetch('/api/createUser', request)
       .then((res) => {
         if(res.ok){
+          setRegisterSuccess(true);
+          setTimeout(() => {
+            setRegisterSuccess(false);
+          }, 2000);
           return res.json();
+        }else{
+          setRegisterError(true);
+          setTimeout(() => {
+            setRegisterError(false);
+          }, 2000);
         }
       })
       .catch((error) => {
@@ -160,16 +178,32 @@ function Dashboard() {
       })
   };
 
+  const fetchAllPatientData = () => {
+    fetch('/api/getAllPatientData')
+      .then((res) => {
+        if(res.ok){
+          return res.json();
+        }
+      })
+      .then((data) => {
+        setAllPatientData(data);
+      })
+      .catch((error) => {
+        console.log("Can't fetch all patient data: ", error);
+      })
+  };
 
   useEffect(() => {
     fetchPatientEmails();
+    fetchPatientData(patientEmail);
+    fetchAllPatientData();
   }, []);
 
-  useEffect(() => {
-    fetchPatientData(patientEmail);
-  }, [showGraph]);
-
   console.log(patientData);
+
+  const processedTableData = useMemo(() => {
+    
+  }, []);
 
 
   const theme = createTheme({
@@ -196,34 +230,36 @@ function Dashboard() {
 
     <ThemeProvider theme={theme}>
       <GlobalStyles
-      styles={{
-        body: {
-          backgroundColor: theme.palette.background.default,
-          color: theme.palette.text.primary,
-          fontFamily: theme.typography.fontFamily,
-        },
-        '.MuiTypography-root': {
-          fontFamily: theme.typography.fontFamily,
-        },
-        '.MuiTable-root': {
-          fontFamily: theme.typography.fontFamily,
-        },
-        '.MuiTableCell-root': {
-          fontFamily: theme.typography.fontFamily,
-        },
-        '.MuiCardContent-root': {
-          fontFamily: theme.typography.fontFamily,
-        },
-      }}
-  />
+        styles={{
+          body: {
+            backgroundColor: theme.palette.background.default,
+            color: theme.palette.text.primary,
+            fontFamily: theme.typography.fontFamily,
+          },
+          '.MuiTypography-root': {
+            fontFamily: theme.typography.fontFamily,
+          },
+          '.MuiTable-root': {
+            fontFamily: theme.typography.fontFamily,
+          },
+          '.MuiTableCell-root': {
+            fontFamily: theme.typography.fontFamily,
+          },
+          '.MuiCardContent-root': {
+            fontFamily: theme.typography.fontFamily,
+          },
+        }}
+      />
     <div
       style={{
+        width: '100%',
         display: 'flex',
         justifyContent: 'flex-start',
         flexDirection: 'column',
         alignItems: 'center',
-        height: '100vh',
+        minHeight: '100vh',
         overflow: 'auto',
+        gap: 10
       }}
     >
       <Box sx={{
@@ -258,7 +294,8 @@ function Dashboard() {
 
       <Card color="blue" variant="outlined" sx={{ 
         width: 900,
-        height: 650, 
+        minHeight: 300,
+        // height: 650, 
         borderRadius: '15px',
         boxShadow: "0 0 60px rgba(0,0,0,0.3)",
         "&:hover": {
@@ -266,6 +303,7 @@ function Dashboard() {
         },
         display: 'flex',
         flexDirection: 'column',
+        marginBottom: '30px'
         }}>
         <CardContent  sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start'}}>
 
@@ -526,7 +564,6 @@ function Dashboard() {
                     formData.bmi = (formData.weight / (((formData.height)/100) **2)).toFixed(2).slice(0, 5)
                     console.log(formData);
                     sendPatientData();
-                    fetchPatientData(patientEmail);
                   }
                 }}
             >
@@ -541,6 +578,59 @@ function Dashboard() {
 
         </CardContent>
           
+      </Card>
+
+      <Card variant='outlined' sx={{
+        width: '1200px',
+        // maxWidth: '900px',
+        minHeight: '400px',
+        borderRadius: '15px',
+        boxShadow: "0 0 60px rgba(0,0,0,0.3)",
+        "&:hover": {
+          boxShadow: "0 0 60px rgba(37, 150, 190, 0.3)",
+        },
+        display: 'flex',
+        flexDirection: 'column',
+        }}>
+        <CardContent>
+        <TableContainer component={Paper}>
+          <Table sx={{ minWidth: 650 }} aria-label="presence prediction table">
+            <TableHead>
+              <TableRow>
+                <TableCell>Rank</TableCell>
+                <TableCell>Email</TableCell>
+                <TableCell>Presence Prediction</TableCell>
+                <TableCell>Severity</TableCell>
+                <TableCell>Leading Causes</TableCell>
+                <TableCell>Suggestions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {allPatientData.length > 0 ?
+                allPatientData.map((data, index) => (
+                  <TableRow 
+                    key={index}
+                    sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                  >
+                    <TableCell>{index + 1}</TableCell>
+                    <TableCell>{data.user_email}</TableCell>
+                    <TableCell>{(Number(data.presence_prediction)).toFixed(4)}</TableCell>
+                    <TableCell>{(Number(data.presence_prediction)).toFixed(4) > 0.7 ? 
+                                  <Alert severity="error" sx={{width: '200px'}}> Needs attention</Alert> : 
+                                  <Alert severity="warning" sx={{width: '200px'}}>Monitor</Alert>}
+                    </TableCell>
+                    <TableCell></TableCell>
+                    <TableCell></TableCell>
+                  </TableRow>
+                )): 
+                <Typography>No data available</Typography>
+                }
+              
+            </TableBody>
+          </Table>
+        </TableContainer>
+          
+        </CardContent>
       </Card>
 
       {/* Modal for registering new patients */}
@@ -586,8 +676,19 @@ function Dashboard() {
           }}
           >Register</Button>
 
+          <Box sx={{
+            marginTop: '10px',
+          }}>
+            {registerSuccess && (<Alert severity="success">Patient registered</Alert>)}
+            {registerError && (<Alert severity="warning">Error, can't register</Alert>)}
+          </Box>
+
+
+
+
+
       </Box>
-    </Modal>
+      </Modal>
       
     </div>
     </ThemeProvider>

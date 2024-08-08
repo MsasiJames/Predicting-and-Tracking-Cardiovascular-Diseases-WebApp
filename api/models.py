@@ -68,4 +68,8 @@ class PatientData(models.Model):
     presence_prediction = models.CharField(null=True, max_length=255)
     createdAt = models.DateField(null=True)
     
+    leading_cause_1 = models.CharField(max_length=100, null=True)
+    leading_cause_2 = models.CharField(max_length=100, null=True)
+    leading_cause_3 = models.CharField(max_length=100, null=True)
+    
     

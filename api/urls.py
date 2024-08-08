@@ -7,4 +7,5 @@ urlpatterns = [
     path("createUser", RegisterView.as_view()),
     path("predict", GradientBoostMachine.as_view()),
     path("patientData", GetPatientData.as_view()),
+    path('getAllPatientData', GetAllPatientData.as_view()),
 ]
