@@ -9,6 +9,10 @@ from django.shortcuts import get_object_or_404
 import numpy as np
 from rest_framework.response import Response
 from django.db.models import Max
+import shap
+import pandas as pd
+from .utils import execute
+
 
 # Create your views here.
 class UserEmailsView(generics.ListAPIView):
@@ -24,20 +28,24 @@ class GradientBoostMachine(APIView):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.model = joblib.load('./models/gbm_model.pkl')     # use absolute path
+        self.explainer = shap.TreeExplainer(self.model)
         
     def get_feature_names(self):
-        return ['age', 'gender', 'weight', 'height', 'ap_hi', 'ap_lo', 'cholesterol', 
-                'glucose', 'alco', 'smoke', 'active', 'bmi', 'bp_encoded']
+        return ['gender', 'height', 'weight', 'ap_hi', 'ap_lo', 'cholesterol', 'gluc'
+                , 'smoke', 'alco', 'active', 'age_years', 'bmi', 'bp_encoded']
 
     def get_leading_causes(self, input_data):
-        feature_importance = self.model.feature_importances_
+        # Compute SHAP values
+        shap_values = self.explainer.shap_values(input_data)
+        
+        # For GBM, shap_values will be a single array
         feature_names = self.get_feature_names()
         
-        # Pair feature names with their importance scores
-        feature_importance_pairs = list(zip(feature_names, feature_importance))
+        # Pair feature names with their absolute SHAP values
+        shap_importance_pairs = list(zip(feature_names, np.abs(shap_values[0])))
         
-        # Sort pairs by importance score in descending order
-        sorted_pairs = sorted(feature_importance_pairs, key=lambda x: x[1], reverse=True)
+        # Sort pairs by absolute SHAP value in descending order
+        sorted_pairs = sorted(shap_importance_pairs, key=lambda x: x[1], reverse=True)
         
         # Return the top 3 feature names
         return [pair[0] for pair in sorted_pairs[:3]]
@@ -50,22 +58,24 @@ class GradientBoostMachine(APIView):
             
             # Extract the features for prediction
             features = [
-                serializer.validated_data['age'],
                 serializer.validated_data['gender'],
-                serializer.validated_data['weight'],
                 serializer.validated_data['height'],
+                serializer.validated_data['weight'],
                 serializer.validated_data['ap_hi'],
                 serializer.validated_data['ap_lo'],
                 serializer.validated_data['cholesterol'],
                 serializer.validated_data['glucose'],
-                serializer.validated_data['alco'],
                 serializer.validated_data['smoke'],
+                serializer.validated_data['alco'],
                 serializer.validated_data['active'],
+                serializer.validated_data['age'],
                 float(serializer.validated_data['bmi']),
                 serializer.validated_data['bp_encoded']
             ]
 
-            input_data = np.array(features).reshape(1, -1)
+            feature_names = self.get_feature_names()
+            input_data = pd.DataFrame([features], columns=feature_names)
+            
             prediction = self.model.predict(input_data)[0]
             probabilities = self.model.predict_proba(input_data)[0]
             
@@ -129,3 +139,22 @@ class GetAllPatientData(generics.ListAPIView):
         
         return queryset
     
+class SuggestionView(APIView):
+    serializer_class = SuggestionSerializer
+    
+    def post(self, request, format = None):
+        serializer = self.serializer_class(data = request.data)
+        
+        if serializer.is_valid():
+            presence_probability = serializer.data.get('presence_probability')
+            leading_cause_1 = serializer.data.get('leading_cause_1')
+            leading_cause_2= serializer.data.get('leading_cause_2')
+            leading_cause_3 = serializer.data.get('leading_cause_3')
+            
+            suggestion = execute(presence_probability, leading_cause_1, leading_cause_2, leading_cause_3)
+            
+            return Response({"Success": suggestion}, status=status.HTTP_200_OK)
+        
+        return Response({"Error": "Bad request"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            

@@ -12,7 +12,7 @@ template = '''
 You a heart health assistant you are supposed to give medical suggestions to your patients 
 based on probability of them getting heart diseases and leading causes
 
-ANSWER BY PROVIDING BULLET POINTS, AND NUMBER THEM
+GIVE YOUR SUGGESTIONS IN ONE SENTENCE, MAKE SHORT AND CLEAR
 '''
 human_template = "{text}"
 
@@ -21,12 +21,10 @@ chat_prompt = ChatPromptTemplate.from_messages([
     ("human", human_template)
 ])
 
-def execute(prob, leading_cause_1, leading_cause_2, leading_cause_3):
-    messages = chat_prompt.format_messages(
-    text = f"{prob} chance of getting heart diseases, leading causes are {leading_cause_1}, {leading_cause_2}, {leading_cause_3}"
-    )
+messages = chat_prompt.format_messages(
+    text = "0.8 chance of getting heart diseases, leading causes are cholesterol, bmi"
+)
 
-    result = chat_model.invoke(input=messages)
-    
-    return result.content
+result = chat_model.invoke(input=messages)
+print(result.content)
 

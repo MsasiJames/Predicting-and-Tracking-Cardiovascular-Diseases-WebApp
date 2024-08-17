@@ -52,4 +52,11 @@ class GetAllPatientDataSerializer(serializers.ModelSerializer):
     user_email = serializers.CharField(source = 'user.email')
     class Meta:
         model = PatientData
-        fields = ('user_email', 'presence_prediction', 'not_presence_prediction', 'createdAt')
+        fields = ('user_email', 'presence_prediction', 'not_presence_prediction', 'leading_cause_1', 'leading_cause_2', 'leading_cause_3',  'createdAt')
+        
+        
+class SuggestionSerializer(serializers.Serializer):
+    presence_probability = serializers.CharField(required = True)
+    leading_cause_1 = serializers.CharField(required = True)
+    leading_cause_2 = serializers.CharField(required = True)
+    leading_cause_3 = serializers.CharField(required = True)

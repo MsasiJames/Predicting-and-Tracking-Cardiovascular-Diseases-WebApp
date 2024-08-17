@@ -9,14 +9,17 @@ import { Card, CardContent,
           Modal, Grid, Table,
           TableBody, TableCell,
           TableContainer, TableHead,
-          TableRow, Paper
+          TableRow, Paper, IconButton
         } from '@mui/material';
 
 import { LineChart } from '@mui/x-charts/LineChart';
 
+import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
+
 import CheckIcon from '@mui/icons-material/Check';
 
 import Welcome from './welcome';
+import SuggestionLoader from './suggestionLoader';
 
 
 function Dashboard() {
@@ -29,6 +32,8 @@ function Dashboard() {
 
   const [allPatientData, setAllPatientData] = useState([]);
 
+  const [suggestion, setSuggestion] = useState('');
+
   const [showGraph, setShowGraph] = useState(true);
 
   const [error, setError] = useState('');
@@ -39,6 +44,13 @@ function Dashboard() {
   const [open, setOpen] = useState(false);
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
+
+  const [openSuggestions, setOpenSuggestions] = useState(false);
+  const handleSuggestionOpen = () => setOpenSuggestions(true);
+  const handelSuggestionClose = () => {
+    setOpenSuggestions(false);
+    setSuggestion('');
+  };
 
   const [formData, setFormData] = useState({
     user_email: `${patientEmail}`,
@@ -193,6 +205,36 @@ function Dashboard() {
       })
   };
 
+  const fetchSuggestions = (prob, leading_cause_1, leading_cause_2, leading_cause_3) => {
+      const request = {
+        'method': 'POST',
+        'headers': {
+          'Content-Type': 'application/json',
+        },
+        'body': JSON.stringify({
+          'presence_probability': `${prob}`,
+          'leading_cause_1': `${leading_cause_1}`,
+          'leading_cause_2': `${leading_cause_2}`,
+          'leading_cause_3': `${leading_cause_3}`
+        })
+      };
+      fetch('/api/suggest', request)
+        .then((res) => {
+          if(res.ok){
+            console.log("Suggestion retrieved successfully")
+            return res.json();
+          }else{
+            console.log("Error occured: ", res.json())
+          }
+        })
+        .then((data) => {
+          setSuggestion(data.Success)
+        })
+        .catch((error) => {
+          console.log("Error fetching suggestions for patient: ", error)
+        })
+  };
+
   useEffect(() => {
     fetchPatientEmails();
     fetchPatientData(patientEmail);
@@ -338,7 +380,7 @@ function Dashboard() {
                 },
                 {
                   data: patientData.map(d => d.not_presence_prediction),
-                  label: 'AbsencePrediction',
+                  label: 'Absence Prediction',
                   color: 'green',
                 },
               ]}
@@ -581,7 +623,7 @@ function Dashboard() {
       </Card>
 
       <Card variant='outlined' sx={{
-        width: '1200px',
+        width: '1000px',
         // maxWidth: '900px',
         minHeight: '400px',
         borderRadius: '15px',
@@ -617,10 +659,26 @@ function Dashboard() {
                     <TableCell>{(Number(data.presence_prediction)).toFixed(4)}</TableCell>
                     <TableCell>{(Number(data.presence_prediction)).toFixed(4) > 0.7 ? 
                                   <Alert severity="error" sx={{width: '200px'}}> Needs attention</Alert> : 
+                                  (Number(data.presence_prediction)).toFixed(4) < 0.5 ?
+                                  <Alert severity="success" sx={{width: '200px'}}>Safe</Alert> :
                                   <Alert severity="warning" sx={{width: '200px'}}>Monitor</Alert>}
                     </TableCell>
-                    <TableCell></TableCell>
-                    <TableCell></TableCell>
+                    <TableCell style={{ whiteSpace: 'pre-wrap' }}>
+                      {data.leading_cause_1}
+                      {'\n'}
+                      {data.leading_cause_2}
+                      {'\n'}
+                      {data.leading_cause_3}
+                  </TableCell>
+                    <TableCell>
+                      <IconButton
+                        onClick={(e) => {
+                          handleSuggestionOpen(e)
+                          fetchSuggestions((Number(data.presence_prediction)).toFixed(4), data.leading_cause_1, data.leading_cause_2, data.leading_cause_3)
+                        }}>
+                        <MoreHorizIcon />
+                        </IconButton>
+                      </TableCell>
                   </TableRow>
                 )): 
                 <Typography>No data available</Typography>
@@ -629,7 +687,9 @@ function Dashboard() {
             </TableBody>
           </Table>
         </TableContainer>
-          
+          <Typography variant="body2" color="text.secondary">
+              Disclaimer: This model provides information and predictions based on data but does not constitute medical advice. Always consult a qualified healthcare professional for personalized medical guidance and diagnosis
+          </Typography>
         </CardContent>
       </Card>
 
@@ -689,6 +749,41 @@ function Dashboard() {
 
       </Box>
       </Modal>
+
+      <Modal
+        open={openSuggestions}
+        onClose={handelSuggestionClose}
+      >
+        <Box 
+          sx={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: 500,
+          height: 500,
+          bgcolor: 'background.paper',
+          border: '2px solid #000',
+          boxShadow: 24,
+          p: 4,
+          borderRadius: '15px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+      }}>
+          <SuggestionLoader />
+          {suggestion.length > 0 && (
+            suggestion.split(/(?=\d\.\s)/).map((part, index) => (
+              <Typography key={index} paragraph>
+                {part.trim()}
+              </Typography>
+            ))
+          )}
+          
+        </Box>
+      </Modal>
+
       
     </div>
     </ThemeProvider>
