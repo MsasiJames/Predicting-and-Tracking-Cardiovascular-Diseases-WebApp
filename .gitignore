@@ -2,3 +2,4 @@
 app.yaml
 db.splite3
 netifly.toml
+api/__pycache__
