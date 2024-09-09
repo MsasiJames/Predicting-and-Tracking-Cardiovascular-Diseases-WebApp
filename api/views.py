@@ -35,7 +35,7 @@ class GradientBoostMachine(APIView):
                 , 'smoke', 'alco', 'active', 'age_years', 'bmi', 'bp_encoded']
 
     def get_leading_causes(self, input_data):
-        # Compute SHAP values
+
         shap_values = self.explainer.shap_values(input_data)
         
         # For GBM, shap_values will be a single array
@@ -44,10 +44,9 @@ class GradientBoostMachine(APIView):
         # Pair feature names with their absolute SHAP values
         shap_importance_pairs = list(zip(feature_names, np.abs(shap_values[0])))
         
-        # Sort pairs by absolute SHAP value in descending order
+        # Sort absolute SHAP value in descending order, getting the most important from the top
         sorted_pairs = sorted(shap_importance_pairs, key=lambda x: x[1], reverse=True)
         
-        # Return the top 3 feature names
         return [pair[0] for pair in sorted_pairs[:3]]
         
     def post(self, request):

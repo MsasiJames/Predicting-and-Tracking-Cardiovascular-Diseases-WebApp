@@ -10,7 +10,8 @@ class UserSerializer(serializers.ModelSerializer):
 class RetrievePatientData(serializers.ModelSerializer):
     class Meta:
         model = PatientData
-        fields = ('not_presence_prediction', 'presence_prediction', 'createdAt')
+        fields = ('not_presence_prediction', 'presence_prediction',  
+                  'leading_cause_1', 'leading_cause_2', 'leading_cause_3', 'createdAt')
         
       
 class RegisterSerializer(serializers.ModelSerializer):
@@ -45,14 +46,16 @@ class PredictSerializer(serializers.ModelSerializer):
     bp_encoded = serializers.IntegerField(required = True)
     class Meta:
         model = PatientData
-        fields = ('user_email', 'age', 'gender', 'weight', 'height', 'ap_hi', 'ap_lo', 'cholesterol', 'glucose', 'alco', 'smoke', 'active'
+        fields = ('user_email', 'age', 'gender', 'weight', 'height', 'ap_hi', 'ap_lo', 
+                  'cholesterol', 'glucose', 'alco', 'smoke', 'active'
                   , 'bmi', 'bp_encoded', 'createdAt')
         
 class GetAllPatientDataSerializer(serializers.ModelSerializer):
     user_email = serializers.CharField(source = 'user.email')
     class Meta:
         model = PatientData
-        fields = ('user_email', 'presence_prediction', 'not_presence_prediction', 'leading_cause_1', 'leading_cause_2', 'leading_cause_3',  'createdAt')
+        fields = ('user_email', 'presence_prediction', 'not_presence_prediction', 'leading_cause_1', 
+                  'leading_cause_2', 'leading_cause_3',  'createdAt')
         
         
 class SuggestionSerializer(serializers.Serializer):
