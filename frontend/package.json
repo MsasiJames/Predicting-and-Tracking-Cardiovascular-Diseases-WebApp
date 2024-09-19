@@ -29,6 +29,7 @@
     "@mui/material": "^5.16.5",
     "@mui/x-charts": "^7.11.0",
     "date-fns": "^3.6.0",
+    "dotenv": "^16.4.5",
     "html2canvas": "^1.4.1",
     "jspdf": "^2.5.1",
     "jspdf-autotable": "^3.8.2",

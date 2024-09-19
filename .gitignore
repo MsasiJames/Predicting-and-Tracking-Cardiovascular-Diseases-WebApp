@@ -1,5 +1,5 @@
 .env
 app.yaml
-db.splite3
-netifly.toml
+db.sqlite3
+netlify.toml
 api/__pycache__/

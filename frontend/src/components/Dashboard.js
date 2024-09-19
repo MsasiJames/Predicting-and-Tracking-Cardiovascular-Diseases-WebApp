@@ -48,6 +48,8 @@ function getCookie(name) {
 
 function Dashboard() {
 
+  const passwordCode = process.env.REACT_APP_FIRST_TIME_USER_PASSWORD_CODE;
+
   const csrfToken = getCookie('csrftoken');
 
   const [patientEmails, setPatientEmails] = useState([]);     // retrieve patient emails from database
@@ -1113,7 +1115,7 @@ function Dashboard() {
       
         <Button size = 'small' variant='outlined' onClick={(event) => {
           handleChangeRegisterUser(event);
-          registerUserData.password = registerUserData.username + "@ycjik";
+          registerUserData.password = registerUserData.username + `${passwordCode}`;
           registerUserData.confirmPassword = registerUserData.password;
           console.log(registerUserData);
           sendImportedPatientData();

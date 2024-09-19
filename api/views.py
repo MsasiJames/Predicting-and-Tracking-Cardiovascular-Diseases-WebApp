@@ -2,6 +2,9 @@ from django.shortcuts import render
 from django.http import HttpResponse
 from rest_framework import generics, status
 from rest_framework.views import APIView
+from django.contrib.auth import login as auth_login
+from django.views.decorators.csrf import get_token
+from django.http import JsonResponse
 from .models import *
 from .serializers import *
 import joblib
@@ -22,6 +25,22 @@ class UserEmailsView(generics.ListAPIView):
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
+    
+def get_csrf_token(request):
+    return JsonResponse({'csrfToken': get_token(request)})
+
+class LoginView(APIView):
+    serializer_class = LoginSerializer
+    
+    def post(self, request):
+        serializer = self.serializer_class(data = request.data)
+        
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+        
+        auth_login(request, user)
+        
+        return Response({"Success": "Login successful"}, status=status.HTTP_200_OK)
     
 class GradientBoostMachine(APIView):
     serializer_class = PredictSerializer
@@ -133,6 +152,8 @@ class GetAllPatientData(generics.ListAPIView):
         latest_entries = PatientData.objects.values('user').annotate(latest_createdAt = Max('createdAt'))
         
         queryset = PatientData.objects.filter(
+            # createdAt__in is a django ORM that allows you to filter through multiple entries and get multiple results unlike
+            # using a normal createdAt which you can only pass on argument and not a list, and will return one result
             createdAt__in = [entry['latest_createdAt'] for entry in latest_entries]
         ).order_by('-presence_prediction')
         
@@ -155,5 +176,3 @@ class SuggestionView(APIView):
             return Response({"Success": suggestion}, status=status.HTTP_200_OK)
         
         return Response({"Error": "Bad request"}, status=status.HTTP_400_BAD_REQUEST)
-            
-            
